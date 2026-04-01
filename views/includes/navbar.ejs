@@ -1,0 +1,73 @@
+ <nav class="navbar navbar-expand-lg   navbar-light bg-white border-bottom shadow-sm sticky-top ">
+  <div class="container ">
+
+    <!-- Logo -->
+    <a class="navbar-brand fw-bold text-primary" href="/">
+      <i class="fa-regular fa-compass"></i> IndiaStayHub
+    </a>
+
+    <!-- Toggle -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Links -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+
+      <ul class="navbar-nav ms-auto align-items-lg-center text-center">
+
+        <li class="nav-item">
+          <a class="nav-link fw-semibold" href="/listings">Home</a>
+        </li>
+        <!---
+        <li class="nav-item">
+          <a class="nav-link fw-semibold" href="/listings">All Listings</a>
+        </li>-->
+
+        <li class="nav-item">
+          <a class="nav-link fw-semibold" href="/mybookings">My Bookings</a>
+        </li>
+
+        <% if(currentUser) { %>
+
+          <li class="nav-item">
+            <span class="nav-link fw-semibold text-success">
+              <i class="fa-solid fa-user"></i>
+              <%= currentUser.username %>
+            </span>
+          </li>
+
+          <li class="nav-item mt-2 mt-lg-0">
+            <a class="btn btn-primary w-100 w-lg-auto" href="/listings/new">
+              Add Listing
+            </a>
+          </li>
+
+          <li class="nav-item mt-2 mt-lg-0">
+            <a class="btn btn-outline-danger w-100 w-lg-auto" href="/logout">
+              Logout
+            </a>
+          </li>
+          <br>
+
+          <% } else { %>
+
+            <li class="nav-item mt-2 mt-lg-0">
+              <a class="btn btn-outline-primary w-100 w-lg-auto" href="/login">
+                Login
+              </a>
+            </li>
+
+            <li class="nav-item mt-2 mt-lg-0">
+              <a class="btn btn-primary w-100 w-lg-auto" href="/register">
+                Sign Up
+              </a>
+            </li>
+
+            <% } %>
+
+      </ul>
+
+    </div>
+  </div>
+</nav>

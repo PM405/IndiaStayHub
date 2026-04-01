@@ -1,0 +1,64 @@
+<% layout("layout/boilerplate.ejs"); %>
+  <h1 class="text-center">Create New Listing</h1>
+  <form method="POST" action="/listings" class="container needs-validation" novalidate>
+
+    <div class="mb-3">
+      <label class="form-label">Title:</label>
+      <input name="listing[title]" placeholder="Enter title" type="text" class="form-control" required />
+      <div class="valid-feedback">
+        Looks good!
+      </div>
+    </div>
+
+
+    <div class="mb-3">
+      <label class="form-label">Description:</label>
+      <textarea name="listing[description]" class="form-control" required></textarea>
+      <div class="valid-feedback">
+        looks good Description!
+      </div>
+    </div>
+
+
+    <div class="mb-3">
+      <label class="form-label">Image URL:</label>
+    <input name="listing[image][url]" placeholder="Enter image URL" type="text" class="form-control" />
+      <div class="invalid-feedback">
+        Please provide a valid image URL.
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Price:</label>
+      <input name="listing[price]" placeholder="Enter price" type="number" class="form-control" required />
+      <div class="invalid-feedback">
+        Please provide a valid price.
+      </div>
+    </div>
+
+
+    <div class="mb-3">
+      <label class="form-label">Country:</label>
+      <input name="listing[country]" placeholder="Enter country" type="text" class="form-control" required />
+      <div class="invalid-feedback">
+        Please provide a valid country.
+      </div>
+    </div>
+
+
+   <!---- <div class="mb-3">
+      <label class="form-label">State:</label>
+      <input name="listing[state]" placeholder="Enter state" type="text" class="form-control" required />
+      <div class="invalid-feedback">
+        Please provide a valid State.
+      </div>
+    </div>-->
+    <div class="mb-3">
+      <label class="form-label">Location:</label>
+      <input name="listing[location]" placeholder="Enter location" type="text" class="form-control" required />
+    </div>
+    <br /><br />
+    <button>Add</button>
+    <br><br>
+
+  </form>
