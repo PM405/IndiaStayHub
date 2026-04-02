@@ -25,14 +25,6 @@ const LocalStrategy = require("passport-local");
 // ================== DB CONNECT ==================
 const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
 
-async function main() {
-  await mongoose.connect(MONGO_URL);
-}
-
-main()
-  .then(() => console.log("connected to DB"))
-  .catch((err) => console.log(err));
-
 // ================== BASIC SETUP ==================
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -72,11 +64,15 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser(async (id, done) => {
-  const user = await User.findById(id);
-  done(null, user);
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err);
+  }
 });
 
-//  IMPORTANT (Fix for navbar error)
+// navbar fix
 app.use((req, res, next) => {
   res.locals.currentUser = req.user;
   next();
@@ -88,18 +84,14 @@ app.get("/", (req, res) => {
 });
 
 // ================== AUTH ROUTES ==================
-
-// Register form page (optional)
 app.get("/register", (req, res) => {
   res.render("users/register");
 });
 
-// Login form page
 app.get("/login", (req, res) => {
   res.render("users/login");
 });
 
-// Register
 app.post("/register", async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -115,7 +107,6 @@ app.post("/register", async (req, res) => {
   res.redirect("/login");
 });
 
-// Login
 app.post("/login",
   passport.authenticate("local", {
     successRedirect: "/listings",
@@ -123,7 +114,6 @@ app.post("/login",
   })
 );
 
-// Logout
 app.get("/logout", (req, res) => {
   req.logout(() => {
     res.redirect("/login");
@@ -138,106 +128,61 @@ function isLoggedIn(req, res, next) {
   next();
 }
 
-// ================== LISTING ROUTES ==================
+// ================== LISTINGS ==================
+app.get("/listings", wrapAsync(async (req, res) => {
+  const allListings = await Listing.find({}).populate("owner");
+  res.render("listings/index", { allListings });
+}));
 
-// INDEX
-app.get("/listings",
-  wrapAsync(async (req, res) => {
-    const allListings = await Listing.find({}).populate("owner");
-    res.render("listings/index", { allListings });
-  })
-);
-
-// NEW (Protected)
 app.get("/listings/new", isLoggedIn, (req, res) => {
   res.render("listings/new");
 });
 
-// SHOW
-app.get("/listings/:id",
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
+app.get("/listings/:id", wrapAsync(async (req, res) => {
+  const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).send("Invalid ID");
-    }
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).send("Invalid ID");
+  }
 
-    const listing = await Listing.findById(id);
-    if (!listing) {
-      return res.status(404).send("Listing not found");
-    }
+  const listing = await Listing.findById(id);
+  if (!listing) {
+    return res.status(404).send("Listing not found");
+  }
 
-    res.render("listings/show", { listing });
-  })
-);
+  res.render("listings/show", { listing });
+}));
 
+app.post("/listings", isLoggedIn, wrapAsync(async (req, res, next) => {
+  const result = listingschema.validate(req.body);
 
+  if (result.error) {
+    let errMsg = result.error.details.map(el => el.message).join(", ");
+    return next(new ExpressError(errMsg, 400));
+  }
 
-// CREATE
-app.post("/listings",
-  isLoggedIn,
-  wrapAsync(async (req, res, next) => {
-    let result = listingschema.validate(req.body);
+  const newListing = new Listing(req.body.listing);
+  await newListing.save();
 
-    if (result.error) {
-      let errMsg = result.error.details.map(el => el.message).join(", ");
-      return next(new ExpressError(errMsg, 400));
-    }
+  res.redirect("/listings");
+}));
 
-    const newListing = new Listing(req.body.listing);
-    await newListing.save();
+app.get("/listings/:id/edit", isLoggedIn, wrapAsync(async (req, res) => {
+  const listing = await Listing.findById(req.params.id);
+  res.render("listings/edit", { listing });
+}));
 
-    res.redirect("/listings");
-  })
-);
+app.put("/listings/:id", isLoggedIn, wrapAsync(async (req, res) => {
+  await Listing.findByIdAndUpdate(req.params.id, { ...req.body.listing });
+  res.redirect(`/listings/${req.params.id}`);
+}));
 
-// EDIT
-app.get("/listings/:id/edit",
-  isLoggedIn,
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
+app.delete("/listings/:id", isLoggedIn, wrapAsync(async (req, res) => {
+  await Listing.findByIdAndDelete(req.params.id);
+  res.redirect("/listings");
+}));
 
-    const listing = await Listing.findById(id);
-    res.render("listings/edit", { listing });
-  })
-);
-
-// UPDATE
-app.put("/listings/:id",
-  isLoggedIn,
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-
-    await Listing.findByIdAndUpdate(id, { ...req.body.listing });
-    res.redirect(`/listings/${id}`);
-  })
-);
-
-// DELETE
-app.delete("/listings/:id",
-  isLoggedIn,
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-
-    await Listing.findByIdAndDelete(id);
-    res.redirect("/listings");
-  })
-);
-
-// ================== ERROR HANDLER ==================
-app.use((err, req, res, next) => {
-  console.log(err);
-
-  let { statusCode = 500, message = "Something went wrong!" } = err;
-  res.status(statusCode).render("listings/error", { message });
-});
-
-// ================== BOOKING ROUTES ==================
-
-// CREATE BOOKING
-// ================== BOOKING ROUTES ==================
-
-// CREATE BOOKING
+// ================== BOOKING ==================
 app.post("/book/:id", isLoggedIn, async (req, res) => {
   const { checkIn, checkOut, paymentStatus } = req.body;
 
@@ -251,16 +196,9 @@ app.post("/book/:id", isLoggedIn, async (req, res) => {
 
   await booking.save();
 
-  // Listing fetch
-  const listing = await Listing.findById(req.params.id);
-
-  //  EMAIL DISABLED (IMPORTANT)
-  // await transporter.sendMail(mailOptions);
-
   res.redirect("/mybookings");
 });
 
-// SHOW USER BOOKINGS
 app.get("/mybookings", isLoggedIn, async (req, res) => {
   const bookings = await Booking.find({ user: req.user._id })
     .populate("listing");
@@ -268,20 +206,40 @@ app.get("/mybookings", isLoggedIn, async (req, res) => {
   res.render("bookings/index", { bookings });
 });
 
-//Email notification for booking (optional)
+// ================== ERROR HANDLER ==================
+app.use((err, req, res, next) => {
+  console.log(err);
+
+  let { statusCode = 500, message = "Something went wrong!" } = err;
+  res.status(statusCode).render("listings/error", { message });
+});
+
+// ================== EMAIL ==================
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: "pm61522@gmail.com",
     pass: "zjvhnlqgkzqjvav"
   },
-   tls: {
-    rejectUnauthorized: false   
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
-// ================== SERVER ==================
-const PORT = 8080;
-app.listen(PORT, () => {
-  console.log(`Server started at http://localhost:${PORT}`);
-});
+// ================== DB + SERVER START (FIXED PART) ==================
+async function startServer() {
+  try {
+    await mongoose.connect(MONGO_URL);
+    console.log(" MongoDB connected");
+
+    const PORT = 8080;
+    app.listen(PORT, () => {
+      console.log(` Server running at http://localhost:${PORT}`);
+    });
+
+  } catch (err) {
+    console.log(" Database connection error:", err);
+  }
+}
+
+startServer();
