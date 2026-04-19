@@ -153,4 +153,126 @@ a{
     border-radius: 12px;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
 }
+.card-footer{
+    margin-bottom: 20px !important;
+    width: 100% !important;
+    height: 50px !important;
+}
+#del{
+    
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 5px !important;
+    transition: background-color 0.3s ease !important;
+    margin-top: -5px !important;
+}
 
+/* ===== NAVBAR BASE ===== */
+.navbar {
+  padding: 10px 0;
+}
+
+/* Container layout fix */
+.navbar .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Logo */
+.navbar-brand {
+  font-size: 20px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* ===== TOGGLER (☰) ===== */
+.navbar-toggler {
+  margin-left: auto !important;
+  width: auto !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+}
+
+.navbar-toggler:focus {
+  box-shadow: none;
+}
+
+/* ===== LINKS ===== */
+.nav-link {
+  font-size: 15px;
+  color: #333 !important;
+}
+
+.nav-link:hover {
+  color: #0d6efd !important;
+}
+
+/* ===== BUTTONS ===== */
+.navbar .btn {
+  font-size: 14px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  width: auto !important;
+}
+
+/* ===== MOBILE & TABLET ===== */
+@media (max-width: 991px) {
+
+  .navbar-collapse {
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px;
+    margin-top: 10px;
+  }
+
+  .navbar-nav {
+    align-items: flex-end;   /* right align */
+    text-align: right;
+    width: 100%;
+  }
+
+  .nav-item {
+    margin-bottom: 8px;
+    width: 100%;
+  }
+
+  /* Prevent full width buttons */
+  .navbar .btn {
+    width: auto !important;
+    display: inline-block;
+  }
+}
+
+/* ===== SMALL PHONES ===== */
+@media (max-width: 576px) {
+  .navbar-brand {
+    font-size: 18px;
+  }
+
+  .navbar-toggler {
+    padding: 3px 6px;
+    font-size: 13px;
+  }
+
+  .nav-link {
+    font-size: 14px;
+  }
+}
+
+/* ===== EXTRA SMALL DEVICES ===== */
+@media (max-width: 400px) {
+  .navbar-brand {
+    font-size: 16px;
+  }
+
+  .navbar-toggler {
+    padding: 2px 5px;
+    font-size: 12px;
+  }
+}
