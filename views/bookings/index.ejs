@@ -17,7 +17,7 @@
 
       <% if (b.listing) { %>
 
-        <div class="col-md-6 col-lg-4 mb-4 booking-card">
+        <div class="col-md-6 col-lg-4 mb-4">
 
           <div class="card h-100 shadow-sm border-0">
 
@@ -28,26 +28,35 @@
 
             <div class="card-body">
 
-              <h5 class="card-title"><%= b.listing.title %></h5>
+              <!-- Title -->
+              <h5 class="card-title">
+                <%= b.listing.title %>
+              </h5>
 
+              <!-- Location -->
               <p class="text-muted mb-1">
                 📍 <%= b.listing.location %>, <%= b.listing.country %>
               </p>
 
+              <!-- Dates -->
               <p class="mb-1">
-                <b>Check-In:</b> <%= new Date(b.checkIn).toDateString() %>
+                <b>Check-In:</b> 
+                <%= new Date(b.checkIn).toDateString() %>
               </p>
 
               <p>
-                <b>Check-Out:</b> <%= new Date(b.checkOut).toDateString() %>
+                <b>Check-Out:</b> 
+                <%= new Date(b.checkOut).toDateString() %>
               </p>
 
+              <!-- Price -->
               <p class="fw-bold text-success">
                 ₹ <%= b.listing.price.toLocaleString("en-IN") %> / night
               </p>
 
+              <!-- Status -->
               <p>
-                <b>Status:</b>
+                <b>Status:</b> 
                 <span class="<%= b.paymentStatus === 'Paid' ? 'text-success' : 'text-warning' %>">
                   <%= b.paymentStatus || "Pending" %>
                 </span>
@@ -56,15 +65,16 @@
             </div>
 
             <!-- Footer -->
-            <div class="card-footer bg-white border-0 d-flex justify-content-between">
+            <div class="card-footer bg-white border-0 text-center d-flex justify-content-between">
 
-              <a href="/listings/<%= b.listing._id %>" class="btn btn-outline-primary btn-sm">
+              <a href="/listings/<%= b.listing._id %>" 
+                 class="btn btn-outline-primary btn-sm">
                 View
               </a>
 
-              <!-- DELETE BUTTON -->
-              <form action="/bookings/<%= b._id %>" method="POST" class="del-form">
-                <button type="submit" class="btn btn-danger btn-sm">
+              <!-- DELETE BOOKING -->
+              <form action="/bookings/<%= b._id %>?_method=DELETE" method="POST" id="del">
+                <button class="btn btn-danger btn-sm">
                   Cancel
                 </button>
               </form>
@@ -77,6 +87,7 @@
 
       <% } else { %>
 
+        <!-- Broken booking fallback -->
         <div class="col-md-6 col-lg-4 mb-4">
           <div class="card p-3 text-center shadow-sm">
             <h6>⚠️ Listing not available</h6>
@@ -89,37 +100,5 @@
     <% }) %>
 
   </div>
+
 </div>
-
-<!-- ✅ AJAX SCRIPT (NO PAGE RELOAD FIXED) -->
-<script>
-document.querySelectorAll(".del-form").forEach(form => {
-  form.addEventListener("submit", async function (e) {
-    e.preventDefault();
-
-    const bookingCard = this.closest(".booking-card");
-
-    try {
-      const res = await fetch(this.action, {
-        method: "DELETE"
-      });
-
-      if (res.ok) {
-        // smooth remove
-        bookingCard.style.transition = "0.3s";
-        bookingCard.style.opacity = "0";
-
-        setTimeout(() => {
-          bookingCard.remove();
-        }, 300);
-      } else {
-        alert("Failed to cancel booking");
-      }
-
-    } catch (err) {
-      console.log(err);
-      alert("Server error");
-    }
-  });
-});
-</script>
