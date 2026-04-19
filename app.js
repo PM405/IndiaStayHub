@@ -9,9 +9,6 @@ const nodemailer = require("nodemailer");
 const Listing = require("./models/listing.js");
 const User = require("./models/user");
 
-
-
-
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsmate = require("ejs-mate");
@@ -26,16 +23,24 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local");
 
 // ================== DB CONNECT ==================
-const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
-//const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
+const MONGO_URL = process.env.MONGO_URI;
 
-async function main() {
-  await mongoose.connect(process.env.MONGO_URL)
+if (!MONGO_URL) {
+  console.log("❌ MONGO_URI missing in environment variables");
+  process.exit(1);
 }
 
-main()
-  .then(() => console.log("connected to DB"))
-  .catch((err) => console.log(err));
+async function connectDB() {
+  try {
+    await mongoose.connect(MONGO_URL);
+    console.log("✅ MongoDB Connected");
+  } catch (err) {
+    console.log("❌ DB Error:", err);
+    process.exit(1);
+  }
+}
+
+connectDB();
 
 // ================== BASIC SETUP ==================
 app.set("view engine", "ejs");
@@ -57,7 +62,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// LOCAL STRATEGY
 passport.use(new LocalStrategy(async (username, password, done) => {
   try {
     const user = await User.findOne({ username });
@@ -80,7 +84,7 @@ passport.deserializeUser(async (id, done) => {
   done(null, user);
 });
 
-//  IMPORTANT (Fix for navbar error)
+// navbar fix
 app.use((req, res, next) => {
   res.locals.currentUser = req.user;
   next();
@@ -92,18 +96,14 @@ app.get("/", (req, res) => {
 });
 
 // ================== AUTH ROUTES ==================
-
-// Register form page (optional)
 app.get("/register", (req, res) => {
   res.render("users/register");
 });
 
-// Login form page
 app.get("/login", (req, res) => {
   res.render("users/login");
 });
 
-// Register
 app.post("/register", async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -119,7 +119,6 @@ app.post("/register", async (req, res) => {
   res.redirect("/login");
 });
 
-// Login
 app.post("/login",
   passport.authenticate("local", {
     successRedirect: "/listings",
@@ -127,7 +126,6 @@ app.post("/login",
   })
 );
 
-// Logout
 app.get("/logout", (req, res) => {
   req.logout(() => {
     res.redirect("/login");
@@ -143,8 +141,6 @@ function isLoggedIn(req, res, next) {
 }
 
 // ================== LISTING ROUTES ==================
-
-// INDEX
 app.get("/listings",
   wrapAsync(async (req, res) => {
     const allListings = await Listing.find({}).populate("owner");
@@ -152,12 +148,10 @@ app.get("/listings",
   })
 );
 
-// NEW (Protected)
 app.get("/listings/new", isLoggedIn, (req, res) => {
   res.render("listings/new");
 });
 
-// SHOW
 app.get("/listings/:id",
   wrapAsync(async (req, res) => {
     let { id } = req.params;
@@ -175,9 +169,6 @@ app.get("/listings/:id",
   })
 );
 
-
-
-// CREATE
 app.post("/listings",
   isLoggedIn,
   wrapAsync(async (req, res, next) => {
@@ -195,53 +186,34 @@ app.post("/listings",
   })
 );
 
-// EDIT
 app.get("/listings/:id/edit",
   isLoggedIn,
   wrapAsync(async (req, res) => {
     let { id } = req.params;
-
     const listing = await Listing.findById(id);
     res.render("listings/edit", { listing });
   })
 );
 
-// UPDATE
 app.put("/listings/:id",
   isLoggedIn,
   wrapAsync(async (req, res) => {
     let { id } = req.params;
-
     await Listing.findByIdAndUpdate(id, { ...req.body.listing });
     res.redirect(`/listings/${id}`);
   })
 );
 
-// DELETE
 app.delete("/listings/:id",
   isLoggedIn,
   wrapAsync(async (req, res) => {
     let { id } = req.params;
-
     await Listing.findByIdAndDelete(id);
     res.redirect("/listings");
   })
 );
 
-// ================== ERROR HANDLER ==================
-app.use((err, req, res, next) => {
-  console.log(err);
-
-  let { statusCode = 500, message = "Something went wrong!" } = err;
-  res.status(statusCode).render("listings/error", { message });
-});
-
-// ================== BOOKING ROUTES ==================
-
-// CREATE BOOKING
-// ================== BOOKING ROUTES ==================
-
-// CREATE BOOKING
+// ================== BOOKING ==================
 app.post("/book/:id", isLoggedIn, async (req, res) => {
   const { checkIn, checkOut, paymentStatus } = req.body;
 
@@ -255,16 +227,9 @@ app.post("/book/:id", isLoggedIn, async (req, res) => {
 
   await booking.save();
 
-  // Listing fetch
-  const listing = await Listing.findById(req.params.id);
-
-  //  EMAIL DISABLED (IMPORTANT)
-  // await transporter.sendMail(mailOptions);
-
   res.redirect("/mybookings");
 });
 
-// SHOW USER BOOKINGS
 app.get("/mybookings", isLoggedIn, async (req, res) => {
   const bookings = await Booking.find({ user: req.user._id })
     .populate("listing");
@@ -272,34 +237,15 @@ app.get("/mybookings", isLoggedIn, async (req, res) => {
   res.render("bookings/index", { bookings });
 });
 
-//Email notification for booking (optional)
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "pm61522@gmail.com",
-    pass: "zjvhnlqgkzqjvav"
-  },
-   tls: {
-    rejectUnauthorized: false   
-  }
-});
-
-// DELETE booking
-app.delete("/bookings/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    await Booking.findByIdAndDelete(id);
-
-    res.redirect("/bookings"); // wapas bookings page
-  } catch (err) {
-    console.log(err);
-    res.status(500).send("Error deleting booking");
-  }
+// ================== ERROR ==================
+app.use((err, req, res, next) => {
+  console.log(err);
+  let { statusCode = 500, message = "Something went wrong!" } = err;
+  res.status(statusCode).render("listings/error", { message });
 });
 
 // ================== SERVER ==================
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`Server started at http://localhost:${PORT}`);
+  console.log(`🚀 Server started on port ${PORT}`);
 });
