@@ -220,6 +220,12 @@ a{
   border-radius: 8px;
   width: auto !important;
 }
+/* Hide toggler on laptop/desktop */
+@media (min-width: 992px) {
+  .navbar-toggler {
+    display: none !important;
+  }
+}
 
 /* ===== MOBILE & TABLET ===== */
 @media (max-width: 991px) {
