@@ -22,9 +22,6 @@ const session = require("express-session");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 
-// ================== DB CONNECT ==================
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
-
 // ================== BASIC SETUP ==================
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -36,7 +33,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // ================== SESSION ==================
 app.use(session({
-  secret: "secretkey",
+  secret: process.env.SESSION_SECRET || "secretkey",
   resave: false,
   saveUninitialized: false
 }));
@@ -45,7 +42,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// LOCAL STRATEGY
 passport.use(new LocalStrategy(async (username, password, done) => {
   try {
     const user = await User.findOne({ username });
@@ -72,7 +68,7 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-// navbar fix
+// Navbar user
 app.use((req, res, next) => {
   res.locals.currentUser = req.user;
   next();
@@ -80,10 +76,10 @@ app.use((req, res, next) => {
 
 // ================== ROOT ==================
 app.get("/", (req, res) => {
-  res.redirect("/listings");
+  res.send("App is working on Railway 🚀");
 });
 
-// ================== AUTH ROUTES ==================
+// ================== AUTH ==================
 app.get("/register", (req, res) => {
   res.render("users/register");
 });
@@ -97,13 +93,9 @@ app.post("/register", async (req, res) => {
 
   const hashed = await bcrypt.hash(password, 10);
 
-  const newUser = new User({
-    username,
-    email,
-    password: hashed
-  });
-
+  const newUser = new User({ username, email, password: hashed });
   await newUser.save();
+
   res.redirect("/login");
 });
 
@@ -115,16 +107,12 @@ app.post("/login",
 );
 
 app.get("/logout", (req, res) => {
-  req.logout(() => {
-    res.redirect("/login");
-  });
+  req.logout(() => res.redirect("/login"));
 });
 
 // ================== MIDDLEWARE ==================
 function isLoggedIn(req, res, next) {
-  if (!req.isAuthenticated()) {
-    return res.redirect("/login");
-  }
+  if (!req.isAuthenticated()) return res.redirect("/login");
   next();
 }
 
@@ -146,9 +134,7 @@ app.get("/listings/:id", wrapAsync(async (req, res) => {
   }
 
   const listing = await Listing.findById(id);
-  if (!listing) {
-    return res.status(404).send("Listing not found");
-  }
+  if (!listing) return res.status(404).send("Listing not found");
 
   res.render("listings/show", { listing });
 }));
@@ -182,7 +168,7 @@ app.delete("/listings/:id", isLoggedIn, wrapAsync(async (req, res) => {
   res.redirect("/listings");
 }));
 
-// ================== BOOKING ==================
+// ================== BOOKINGS ==================
 app.post("/book/:id", isLoggedIn, async (req, res) => {
   const { checkIn, checkOut, paymentStatus } = req.body;
 
@@ -195,53 +181,43 @@ app.post("/book/:id", isLoggedIn, async (req, res) => {
   });
 
   await booking.save();
-
   res.redirect("/mybookings");
 });
 
 app.get("/mybookings", isLoggedIn, async (req, res) => {
-  const bookings = await Booking.find({ user: req.user._id })
-    .populate("listing");
-
+  const bookings = await Booking.find({ user: req.user._id }).populate("listing");
   res.render("bookings/index", { bookings });
-});
-
-// ================== ERROR HANDLER ==================
-app.use((err, req, res, next) => {
-  console.log(err);
-
-  let { statusCode = 500, message = "Something went wrong!" } = err;
-  res.status(statusCode).render("listings/error", { message });
 });
 
 // ================== EMAIL ==================
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "pm61522@gmail.com",
-    pass: "zjvhnlqgkzqjvav"
-  },
-  tls: {
-    rejectUnauthorized: false
+    user: process.env.EMAIL,
+    pass: process.env.EMAIL_PASS
   }
 });
 
-// ================== DB + SERVER START (FIXED PART) ==================
+// ================== ERROR ==================
+app.use((err, req, res, next) => {
+  console.log(err);
+  res.status(500).send("Something went wrong!");
+});
+
+// ================== START SERVER ==================
 async function startServer() {
   try {
-    await mongoose.connect(MONGO_URL);
-    console.log(" MongoDB connected");
+    await mongoose.connect(process.env.MONGO_URL);
+    console.log("MongoDB connected");
 
-// Use PORT provided in environment or default to 3000
-const port = process.env.PORT || 8080;
+    const port = process.env.PORT || 8080;
 
-// Listen on `port` and 0.0.0.0
-app.listen(port, "0.0.0.0", function () {
-  console.log(` Server running at http://localhost:${PORT}`);
-});
-   
+    app.listen(port, "0.0.0.0", () => {
+      console.log(`Server running on port ${port}`);
+    });
+
   } catch (err) {
-    console.log(" Database connection error:", err);
+    console.log("DB Error:", err);
   }
 }
 
