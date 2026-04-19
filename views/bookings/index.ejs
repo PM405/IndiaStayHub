@@ -72,9 +72,9 @@
                 View
               </a>
 
-              <!-- DELETE BOOKING -->
-              <form action="/bookings/<%= b._id %>?_method=DELETE" method="POST" id="del">
-                <button class="btn btn-danger btn-sm">
+              <!-- DELETE BOOKING (FIXED) -->
+              <form action="/bookings/<%= b._id %>?_method=DELETE" method="POST" class="del-form">
+                <button type="submit" class="btn btn-danger btn-sm">
                   Cancel
                 </button>
               </form>
@@ -90,7 +90,7 @@
         <!-- Broken booking fallback -->
         <div class="col-md-6 col-lg-4 mb-4">
           <div class="card p-3 text-center shadow-sm">
-            <h6>⚠️ Listing not available</h6>
+            <h6> Listing not available</h6>
             <p class="text-muted">This booking is linked to a deleted listing.</p>
           </div>
         </div>
@@ -100,5 +100,30 @@
     <% }) %>
 
   </div>
-
 </div>
+
+<!--  AJAX SCRIPT (NO PAGE RELOAD) -->
+<script>
+document.querySelectorAll(".del-form").forEach(form => {
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault(); // stop page reload
+
+    try {
+      const res = await fetch(this.action, {
+        method: "POST"
+      });
+
+      if (res.ok) {
+        // remove card smoothly
+        this.closest(".col-md-6").remove();
+      } else {
+        alert("Failed to cancel booking");
+      }
+
+    } catch (err) {
+      console.log(err);
+      alert("Something went wrong");
+    }
+  });
+});
+</script>
