@@ -237,6 +237,20 @@ app.get("/mybookings", isLoggedIn, async (req, res) => {
   res.render("bookings/index", { bookings });
 });
 
+// DELETE booking
+app.delete("/bookings/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await Booking.findByIdAndDelete(id);
+
+    res.redirect("/bookings"); // wapas bookings page
+  } catch (err) {
+    console.log(err);
+    res.status(500).send("Error deleting booking");
+  }
+});
+
 // ================== ERROR ==================
 app.use((err, req, res, next) => {
   console.log(err);
