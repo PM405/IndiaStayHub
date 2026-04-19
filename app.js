@@ -143,7 +143,7 @@ function isLoggedIn(req, res, next) {
 // ================== LISTING ROUTES ==================
 app.get("/listings",
   wrapAsync(async (req, res) => {
-    const allListings = await Listing.find({}).populate("owner");
+   const allListings = await Listing.find({});
     res.render("listings/index", { allListings });
   })
 );
