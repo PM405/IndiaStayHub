@@ -1,15 +1,30 @@
 body {
-
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     margin-top: 10px !important;
 }
+
 .lead {
     font-size: 1.2rem !important;
     color: #555 !important;
 }
+
+/* ===== NAVBAR ===== */
 .navbar {
     height: 5rem;
     background-color: wheat !important;
+    padding: 10px 0;
+}
+
+.navbar .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar-brand {
+    font-size: 20px;
+    font-weight: bold;
+    white-space: nowrap;
 }
 
 .fa-compass {
@@ -22,8 +37,43 @@ body {
     color: #333 !important;
 }
 
-/* footer*/
+.nav-link:hover {
+    color: #0d6efd !important;
+}
 
+/* ===== TOGGLER ===== */
+.navbar-toggler {
+    margin-left: auto !important;
+    width: auto !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    font-size: 14px;
+    border-radius: 6px;
+    border: none;
+}
+
+.navbar-toggler:focus {
+    box-shadow: none;
+}
+
+/* Hide toggler on desktop */
+@media (min-width: 992px) {
+    .navbar-toggler {
+        display: none !important;
+    }
+}
+
+/* ===== BUTTONS ===== */
+.navbar .btn {
+    font-size: 14px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    width: auto !important;
+}
+
+/* ===== FOOTER ===== */
 footer {
     height: 8rem;
     background-color: #ebebeb;
@@ -32,7 +82,6 @@ footer {
     justify-content: center;
     align-items: center;
     text-align: center;
-    
 }
 
 .f-info-links a {
@@ -52,15 +101,20 @@ footer {
     gap: 0.5rem;
 }
 
-/* cards */
+/* ===== CARDS ===== */
 .card {
     width: 18rem !important;
-    
     margin: 1rem !important;
     border: none !important;
     border-radius: 8px !important;
     overflow: hidden !important;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
 }
 
 .card-img-top {
@@ -68,9 +122,12 @@ footer {
     object-fit: cover !important;
 }
 
-/*new listing form*/
+/* ===== BOOKING PAGE FIX (IMPORTANT ADDITION) ===== */
+.booking-card {
+    transition: all 0.3s ease;
+}
 
-
+/* ===== FORM ===== */
 h3 {
     text-align: center;
     margin-top: 20px;
@@ -103,6 +160,7 @@ label {
     box-shadow: 0 0 5px rgba(13, 110, 253, 0.5) !important;
 }
 
+/* ===== BUTTONS ===== */
 button {
     width: 100%;
     padding: 10px;
@@ -119,9 +177,9 @@ button:hover {
     transform: scale(1.03);
 }
 
-/*show image page*/
+/* ===== SHOW PAGE ===== */
 .show-image {
-   height: 30vh !important;
+    height: 30vh !important;
     object-fit: cover !important;
     width: 100% !important;
 }
@@ -132,20 +190,19 @@ button:hover {
     border: none !important;
     padding: 10px 20px !important;
     border-radius: 5px !important;
-    transition: background-color 0.3s ease !important;
-    
+    transition: 0.3s ease !important;
 }
+
 .edit-btn:hover {
     background-color: #3b4cc0 !important;
     transform: scale(1.05) !important;
-
 }
-a{
+
+a {
     text-decoration: none !important;
-    
 }
 
-.edit{
+.edit {
     max-width: 600px !important;
     margin: 30px auto;
     padding: 25px;
@@ -153,132 +210,49 @@ a{
     border-radius: 12px;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
 }
-.card-footer{
+
+/* ===== CARD FOOTER ===== */
+.card-footer {
     margin-bottom: 20px !important;
     width: 100% !important;
     height: 50px !important;
 }
-#del{
-    
+
+/* ===== DELETE FORM FIX ===== */
+#del {
     border: none !important;
     padding: 10px 20px !important;
     border-radius: 5px !important;
-    transition: background-color 0.3s ease !important;
     margin-top: -5px !important;
 }
 
-/* ===== NAVBAR BASE ===== */
-.navbar {
-  padding: 10px 0;
-}
-
-/* Container layout fix */
-.navbar .container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* Logo */
-.navbar-brand {
-  font-size: 20px;
-  font-weight: bold;
-  white-space: nowrap;
-}
-
-/* ===== TOGGLER (☰) ===== */
-.navbar-toggler {
-  margin-left: auto !important;
-  width: auto !important;
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 8px;
-  font-size: 14px;
-  border-radius: 6px;
-  border: none;
-}
-
-.navbar-toggler:focus {
-  box-shadow: none;
-}
-
-/* ===== LINKS ===== */
-.nav-link {
-  font-size: 15px;
-  color: #333 !important;
-}
-
-.nav-link:hover {
-  color: #0d6efd !important;
-}
-
-/* ===== BUTTONS ===== */
-.navbar .btn {
-  font-size: 14px;
-  padding: 6px 14px;
-  border-radius: 8px;
-  width: auto !important;
-}
-/* Hide toggler on laptop/desktop */
-@media (min-width: 992px) {
-  .navbar-toggler {
-    display: none !important;
-  }
-}
-
-/* ===== MOBILE & TABLET ===== */
+/* ===== RESPONSIVE ===== */
 @media (max-width: 991px) {
+    .navbar-collapse {
+        background: #fff;
+        border-radius: 10px;
+        padding: 10px;
+        margin-top: 10px;
+    }
 
-  .navbar-collapse {
-    background: #fff;
-    border-radius: 10px;
-    padding: 10px;
-    margin-top: 10px;
-  }
+    .navbar-nav {
+        align-items: flex-end;
+        text-align: right;
+        width: 100%;
+    }
 
-  .navbar-nav {
-    align-items: flex-end;   /* right align */
-    text-align: right;
-    width: 100%;
-  }
-
-  .nav-item {
-    margin-bottom: 8px;
-    width: 100%;
-  }
-
-  /* Prevent full width buttons */
-  .navbar .btn {
-    width: auto !important;
-    display: inline-block;
-  }
+    .nav-item {
+        margin-bottom: 8px;
+        width: 100%;
+    }
 }
 
-/* ===== SMALL PHONES ===== */
 @media (max-width: 576px) {
-  .navbar-brand {
-    font-size: 18px;
-  }
+    .navbar-brand {
+        font-size: 18px;
+    }
 
-  .navbar-toggler {
-    padding: 3px 6px;
-    font-size: 13px;
-  }
-
-  .nav-link {
-    font-size: 14px;
-  }
-}
-
-/* ===== EXTRA SMALL DEVICES ===== */
-@media (max-width: 400px) {
-  .navbar-brand {
-    font-size: 16px;
-  }
-
-  .navbar-toggler {
-    padding: 2px 5px;
-    font-size: 12px;
-  }
+    .nav-link {
+        font-size: 14px;
+    }
 }
