@@ -238,18 +238,15 @@ app.get("/mybookings", isLoggedIn, async (req, res) => {
 });
 
 // DELETE booking
-app.delete("/bookings/:id", async (req, res) => {
+app.delete("/bookings/:id", isLoggedIn, async (req, res) => {
   try {
-    const { id } = req.params;
-
-    await Booking.findByIdAndDelete(id);
-
-    res.redirect("/bookings"); // wapas bookings page
+    await Booking.findByIdAndDelete(req.params.id);
+    res.sendStatus(200);
   } catch (err) {
-    console.log(err);
-    res.status(500).send("Error deleting booking");
+    res.sendStatus(500);
   }
 });
+
 
 // ================== ERROR ==================
 app.use((err, req, res, next) => {
