@@ -72,12 +72,10 @@
                 View
               </a>
 
-              <!-- DELETE BOOKING -->
-              <form action="/bookings/<%= b._id %>?_method=DELETE" method="POST" id="del">
-                <button class="btn btn-danger btn-sm">
-                  Cancel
-                </button>
-              </form>
+              <!-- CANCEL  -->
+                    <a href="#" class="btn btn-outline-primary btn-sm cancel-btn" data-id="<%= b._id %>">
+                      Cancel
+                    </a>
 
             </div>
 
@@ -90,7 +88,7 @@
         <!-- Broken booking fallback -->
         <div class="col-md-6 col-lg-4 mb-4">
           <div class="card p-3 text-center shadow-sm">
-            <h6>⚠️ Listing not available</h6>
+            <h6> Listing not available</h6>
             <p class="text-muted">This booking is linked to a deleted listing.</p>
           </div>
         </div>
@@ -102,3 +100,29 @@
   </div>
 
 </div>
+<script>
+document.querySelectorAll(".cancel-btn").forEach(btn => {
+  btn.addEventListener("click", async function (e) {
+    e.preventDefault();
+
+    const bookingId = this.dataset.id;
+    const card = this.closest(".col-md-6");
+
+    try {
+      const res = await fetch(`/bookings/${bookingId}`, {
+        method: "DELETE"
+      });
+
+      if (res.ok) {
+        card.remove(); // remove without reload
+      } else {
+        alert("Cancel failed");
+      }
+
+    } catch (err) {
+      console.log(err);
+      alert("Server error");
+    }
+  });
+});
+</script>
