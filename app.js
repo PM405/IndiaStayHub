@@ -1,48 +1,63 @@
-// ================== IMPORTS ==================
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-const Booking = require("./models/booking");
-const nodemailer = require("nodemailer");
 
-const Listing = require("./models/listing.js");
+const Booking = require("./models/booking");
+const Listing = require("./models/listing");
 const User = require("./models/user");
+
+const nodemailer = require("nodemailer");
+require("dotenv").config();
 
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsmate = require("ejs-mate");
 
-const wrapAsync = require("./utils/wrapAsync.js");
-const ExpressError = require("./utils/ExpressError.js");
-const { listingschema } = require("./schema.js");
+const wrapAsync = require("./utils/wrapAsync");
+const ExpressError = require("./utils/ExpressError");
+const { listingschema } = require("./schema");
 
-// AUTH
 const session = require("express-session");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
+
+// ================= EMAIL =================
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
 
 // ================== DB CONNECT ==================
 const MONGO_URL = process.env.MONGO_URI;
 
 if (!MONGO_URL) {
-  console.log("❌ MONGO_URI missing in environment variables");
+  console.log(" MONGO_URI missing in environment variables");
   process.exit(1);
 }
 
 async function connectDB() {
   try {
     await mongoose.connect(MONGO_URL);
-    console.log("✅ MongoDB Connected");
+    console.log(" MongoDB Connected");
   } catch (err) {
-    console.log("❌ DB Error:", err);
+    console.log(" DB Error:", err);
     process.exit(1);
   }
 }
 
 connectDB();
 
-// ================== BASIC SETUP ==================
+
+// ================= VIEW =================
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
@@ -51,71 +66,55 @@ app.use(methodOverride("_method"));
 app.engine("ejs", ejsmate);
 app.use(express.static(path.join(__dirname, "public")));
 
-// ================== SESSION ==================
+
+// ================= SESSION =================
 app.use(session({
   secret: "secretkey",
   resave: false,
   saveUninitialized: false
 }));
 
-// ================== PASSPORT ==================
+
+// ================= PASSPORT =================
 app.use(passport.initialize());
 app.use(passport.session());
 
 passport.use(new LocalStrategy(async (username, password, done) => {
-  try {
-    const user = await User.findOne({ username });
-    if (!user) return done(null, false);
+  const user = await User.findOne({ username });
+  if (!user) return done(null, false);
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (isMatch) return done(null, user);
-    else return done(null, false);
-  } catch (err) {
-    return done(err);
-  }
+  const isMatch = await bcrypt.compare(password, user.password);
+  return isMatch ? done(null, user) : done(null, false);
 }));
 
-passport.serializeUser((user, done) => {
-  done(null, user.id);
-});
+passport.serializeUser((user, done) => done(null, user.id));
 
 passport.deserializeUser(async (id, done) => {
   const user = await User.findById(id);
   done(null, user);
 });
 
-// navbar fix
+
+// ================= GLOBAL =================
 app.use((req, res, next) => {
   res.locals.currentUser = req.user;
   next();
 });
 
-// ================== ROOT ==================
-app.get("/", (req, res) => {
-  res.redirect("/listings");
-});
 
-// ================== AUTH ROUTES ==================
-app.get("/register", (req, res) => {
-  res.render("users/register");
-});
+// ================= ROUTES =================
+app.get("/", (req, res) => res.redirect("/listings"));
 
-app.get("/login", (req, res) => {
-  res.render("users/login");
-});
+
+// AUTH
+app.get("/register", (req, res) => res.render("users/register"));
+app.get("/login", (req, res) => res.render("users/login"));
 
 app.post("/register", async (req, res) => {
   const { username, email, password } = req.body;
-
   const hashed = await bcrypt.hash(password, 10);
 
-  const newUser = new User({
-    username,
-    email,
-    password: hashed
-  });
-
-  await newUser.save();
+  await new User({ username, email, password: hashed }).save();
   res.redirect("/login");
 });
 
@@ -127,136 +126,126 @@ app.post("/login",
 );
 
 app.get("/logout", (req, res) => {
-  req.logout(() => {
-    res.redirect("/login");
-  });
+  req.logout(() => res.redirect("/login"));
 });
 
-// ================== MIDDLEWARE ==================
+
+// AUTH MIDDLEWARE
 function isLoggedIn(req, res, next) {
-  if (!req.isAuthenticated()) {
-    return res.redirect("/login");
-  }
+  if (!req.isAuthenticated()) return res.redirect("/login");
   next();
 }
 
-// ================== LISTING ROUTES ==================
-app.get("/listings",
-  wrapAsync(async (req, res) => {
-   const allListings = await Listing.find({});
-    res.render("listings/index", { allListings });
-  })
-);
+
+// ================= LISTINGS =================
+app.get("/listings", wrapAsync(async (req, res) => {
+  const allListings = await Listing.find({});
+  res.render("listings/index", { allListings });
+}));
 
 app.get("/listings/new", isLoggedIn, (req, res) => {
   res.render("listings/new");
 });
 
-app.get("/listings/:id",
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
+app.post("/listings", isLoggedIn, wrapAsync(async (req, res, next) => {
+  const result = listingschema.validate(req.body);
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).send("Invalid ID");
-    }
+  if (result.error) {
+    const msg = result.error.details.map(e => e.message).join(",");
+    return next(new ExpressError(msg, 400));
+  }
 
-    const listing = await Listing.findById(id);
-    if (!listing) {
-      return res.status(404).send("Listing not found");
-    }
-
-    res.render("listings/show", { listing });
-  })
-);
-
-app.post("/listings",
-  isLoggedIn,
-  wrapAsync(async (req, res, next) => {
-    let result = listingschema.validate(req.body);
-
-    if (result.error) {
-      let errMsg = result.error.details.map(el => el.message).join(", ");
-      return next(new ExpressError(errMsg, 400));
-    }
-
-    const newListing = new Listing(req.body.listing);
-    await newListing.save();
-
-    res.redirect("/listings");
-  })
-);
-
-app.get("/listings/:id/edit",
-  isLoggedIn,
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    const listing = await Listing.findById(id);
-    res.render("listings/edit", { listing });
-  })
-);
-
-app.put("/listings/:id",
-  isLoggedIn,
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    await Listing.findByIdAndUpdate(id, { ...req.body.listing });
-    res.redirect(`/listings/${id}`);
-  })
-);
-
-app.delete("/listings/:id",
-  isLoggedIn,
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    await Listing.findByIdAndDelete(id);
-    res.redirect("/listings");
-  })
-);
-
-// ================== BOOKING ==================
-app.post("/book/:id", isLoggedIn, async (req, res) => {
-  const { checkIn, checkOut, paymentStatus } = req.body;
-
-  const booking = new Booking({
-    user: req.user._id,
-    listing: req.params.id,
-    checkIn,
-    checkOut,
-    paymentStatus: paymentStatus || "Pending"
+  const newListing = new Listing({
+    ...req.body.listing,
+    owner: req.user._id
   });
 
-  await booking.save();
+  await newListing.save();
+  res.redirect("/listings");
+}));
 
-  res.redirect("/mybookings");
+app.get("/listings/:id", wrapAsync(async (req, res) => {
+  const listing = await Listing.findById(req.params.id);
+  res.render("listings/show", { listing });
+}));
+
+
+// ================= BOOKING =================
+app.post("/book/:id", isLoggedIn, async (req, res) => {
+  try {
+
+    // 
+    console.log("BODY:", req.body);
+
+    const data = req.body;
+
+    const booking = new Booking({
+      user: req.user._id,
+      listing: req.params.id,
+      checkIn: data.checkIn,
+      checkOut: data.checkOut,
+      name: data.name,
+      phone: data.phone,
+      aadhaar: data.aadhaar,
+      pincode: data.pincode,
+      paymentStatus: "Pending"
+    });
+
+    await booking.save();
+
+    const listing = await Listing.findById(req.params.id);
+
+    // EMAIL
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: "pm6152271@gmail.com",
+      subject: "🎉 New Booking Received",
+      html: `
+        <h2>New Booking</h2>
+        <p><b>Name:</b> ${data.name}</p>
+        <p><b>Phone:</b> ${data.phone}</p>
+        <p><b>Aadhaar:</b> ${data.aadhaar || "N/A"}</p>
+        <p><b>PIN:</b> ${data.pincode || "N/A"}</p>
+      `
+    });
+
+    res.redirect("/mybookings");
+
+  } catch (err) {
+    console.log(err);
+    res.redirect("/mybookings");
+  }
 });
+  
 
+
+// ================= BOOKINGS =================
 app.get("/mybookings", isLoggedIn, async (req, res) => {
-  const bookings = await Booking.find({ user: req.user._id })
-    .populate("listing");
-
+  const bookings = await Booking.find({ user: req.user._id }).populate("listing");
   res.render("bookings/index", { bookings });
 });
 
-// DELETE booking
 app.delete("/bookings/:id", isLoggedIn, async (req, res) => {
   try {
     await Booking.findByIdAndDelete(req.params.id);
     res.sendStatus(200);
-  } catch (err) {
+  } catch {
     res.sendStatus(500);
   }
 });
 
 
-// ================== ERROR ==================
+// ================= ERROR =================
 app.use((err, req, res, next) => {
-  console.log(err);
-  let { statusCode = 500, message = "Something went wrong!" } = err;
-  res.status(statusCode).render("listings/error", { message });
+  res.status(err.statusCode || 500).render("listings/error", {
+    message: err.message || "Something went wrong!"
+  });
 });
 
-// ================== SERVER ==================
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`🚀 Server started on port ${PORT}`);
+
+// ================= SERVER =================
+app.listen(8080, () => {
+  console.log("Server running at http://localhost:8080");
 });
+
+
