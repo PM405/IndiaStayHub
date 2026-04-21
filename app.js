@@ -39,11 +39,24 @@ const transporter = nodemailer.createTransport({
 
 
 // ================= DB =================
-const MONGO_URL = process.env.MONGO_URL || 
+const MONGO_URL = process.env.MONGO_URI;
 
-mongoose.connect(MONGO_URL)
-  .then(() => console.log("DB Connected"))
-  .catch(err => console.log(err));
+if (!MONGO_URL) {
+  console.log("❌ MONGO_URI missing in environment variables");
+  process.exit(1);
+}
+
+async function connectDB() {
+  try {
+    await mongoose.connect(MONGO_URL);
+    console.log("✅ MongoDB Connected");
+  } catch (err) {
+    console.log("❌ DB Error:", err);
+    process.exit(1);
+  }
+}
+
+connectDB();
 
 
 // ================= VIEW =================
