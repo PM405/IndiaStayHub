@@ -39,7 +39,7 @@ const transporter = nodemailer.createTransport({
 
 
 // ================= DB =================
-const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
+const MONGO_URL = process.env.MONGO_URL || 
 
 mongoose.connect(MONGO_URL)
   .then(() => console.log("DB Connected"))
